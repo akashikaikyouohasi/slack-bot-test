@@ -52,3 +52,15 @@ resource "aws_api_gateway_stage" "main" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = "v1"
 }
+
+# スロットリング: 不正アクセスによる過剰課金を防止
+resource "aws_api_gateway_method_settings" "main" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  stage_name  = aws_api_gateway_stage.main.stage_name
+  method_path = "*/*"
+
+  settings {
+    throttling_rate_limit  = 10  # 秒間10リクエスト
+    throttling_burst_limit = 20  # バースト時最大20リクエスト
+  }
+}
