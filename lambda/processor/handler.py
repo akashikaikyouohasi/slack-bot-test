@@ -31,6 +31,7 @@ def lambda_handler(event, context):
     logger.info("Received event: %s", json.dumps(event, ensure_ascii=False))
 
     channel = event["channel"]
+    thread_ts = event.get("thread_ts", event.get("ts"))
     user_text = event.get("text", "")
 
     # Strip bot mention: "<@U12345> hello" -> "hello"
@@ -66,5 +67,5 @@ def lambda_handler(event, context):
         answer = f"Error: {str(e)}"
 
     slack = get_slack_client()
-    slack.chat_postMessage(channel=channel, text=answer)
-    logger.info("Response posted to channel=%s", channel)
+    slack.chat_postMessage(channel=channel, text=answer, thread_ts=thread_ts)
+    logger.info("Response posted to channel=%s, thread_ts=%s", channel, thread_ts)
