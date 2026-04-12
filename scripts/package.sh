@@ -12,8 +12,8 @@ echo "=== Packaging Processor Lambda ==="
 rm -rf "$PACKAGE_DIR"
 mkdir -p "$PACKAGE_DIR"
 
-# Install dependencies
-pip install -r "$PROCESSOR_DIR/requirements.txt" -t "$PACKAGE_DIR" --quiet
+# Install dependencies (Python 3.12 / Linux x86_64 for Lambda runtime)
+uv pip install -r "$PROCESSOR_DIR/requirements.txt" --target "$PACKAGE_DIR" --python 3.12 --python-platform x86_64-manylinux2014 --quiet
 
 # Copy source files
 cp "$PROCESSOR_DIR/handler.py" "$PROCESSOR_DIR/system_prompt.py" "$PACKAGE_DIR/"

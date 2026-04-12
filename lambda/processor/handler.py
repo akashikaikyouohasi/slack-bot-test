@@ -4,12 +4,13 @@ import os
 import re
 import boto3
 from slack_sdk import WebClient
+from strands import Agent
+from strands.models.bedrock import BedrockModel
 from system_prompt import SYSTEM_PROMPT
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
-bedrock = boto3.client("bedrock-runtime")
 secrets_client = boto3.client("secretsmanager")
 
 # Cache secret and client across invocations
@@ -46,13 +47,13 @@ def build_messages_from_thread(slack, channel, thread_ts, thinking_ts, bot_user_
             continue
 
         if msg.get("bot_id") or msg.get("user") == bot_user_id:
-            messages.append({"role": "assistant", "content": text})
+            messages.append({"role": "assistant", "content": [{"text": text}]})
         else:
-            messages.append({"role": "user", "content": text})
+            messages.append({"role": "user", "content": [{"text": text}]})
 
-    # assistant が連続する場合やuserで始まらない場合を補正
+    # userで始まらない場合を補正
     if not messages or messages[0]["role"] != "user":
-        messages.insert(0, {"role": "user", "content": "Hello!"})
+        messages.insert(0, {"role": "user", "content": [{"text": "Hello!"}]})
 
     return messages
 
@@ -81,38 +82,34 @@ def lambda_handler(event, context):
     thinking_ts = thinking_msg["ts"]
     logger.info("Thinking message posted: ts=%s", thinking_ts)
 
-    # Bot自身のuser_idを取得（キャッシュはWebClientが内部で行う）
+    # Bot自身のuser_idを取得
     bot_user_id = slack.auth_test()["user_id"]
 
     # スレッド履歴からmessages配列を構築
     messages = build_messages_from_thread(
         slack, channel, thread_ts, thinking_ts, bot_user_id
     )
-    logger.info("Messages for Bedrock: %d turns, content: %s", len(messages), json.dumps(messages, ensure_ascii=False))
+    logger.info("Messages for agent: %d turns, content: %s", len(messages), json.dumps(messages, ensure_ascii=False))
 
     try:
         model_id = os.environ.get(
             "BEDROCK_MODEL_ID", "global.anthropic.claude-haiku-4-5-20251001-v1:0"
         )
-        logger.info("Calling Bedrock model: %s", model_id)
-        response = bedrock.invoke_model(
-            modelId=model_id,
-            contentType="application/json",
-            accept="application/json",
-            body=json.dumps(
-                {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 1024,
-                    "system": SYSTEM_PROMPT,
-                    "messages": messages,
-                }
-            ),
+        logger.info("Calling Strands Agent with model: %s", model_id)
+
+        model = BedrockModel(model_id=model_id)
+        agent = Agent(
+            model=model,
+            system_prompt=SYSTEM_PROMPT,
+            messages=messages,
         )
-        result = json.loads(response["body"].read())
-        answer = result["content"][0]["text"]
-        logger.info("Bedrock response received: %d chars", len(answer))
+
+        # エージェントループ実行（ツール追加時は自動でループする）
+        result = agent(user_text)
+        answer = str(result)
+        logger.info("Agent response received: %d chars", len(answer))
     except Exception as e:
-        logger.error("Bedrock invocation failed: %s", e, exc_info=True)
+        logger.error("Agent invocation failed: %s", e, exc_info=True)
         answer = f"Error: {str(e)}"
 
     # 「思考中...」を回答で更新
