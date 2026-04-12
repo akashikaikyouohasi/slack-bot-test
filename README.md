@@ -38,7 +38,9 @@ Slackは3秒以内のHTTPレスポンスを要求するため、受信用 (Dispa
 | Scope | 用途 |
 |---|---|
 | `app_mentions:read` | ボットへのメンション検知 |
-| `chat:write` | チャンネルへのメッセージ投稿 |
+| `chat:write` | チャンネルへのメッセージ投稿・更新 |
+| `channels:history` | パブリックチャンネルのスレッド履歴取得 |
+| `groups:history` | プライベートチャンネルのスレッド履歴取得 |
 
 スコープ追加後、「Install to Workspace」でアプリをインストールし、`xoxb-` で始まるBot User OAuth Tokenを取得する。
 
