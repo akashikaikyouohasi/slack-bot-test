@@ -4,6 +4,7 @@ import os
 import re
 import boto3
 from slack_sdk import WebClient
+from system_prompt import SYSTEM_PROMPT
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -102,6 +103,7 @@ def lambda_handler(event, context):
                 {
                     "anthropic_version": "bedrock-2023-05-31",
                     "max_tokens": 1024,
+                    "system": SYSTEM_PROMPT,
                     "messages": messages,
                 }
             ),
