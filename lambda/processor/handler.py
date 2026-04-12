@@ -7,6 +7,7 @@ from slack_sdk import WebClient
 from strands import Agent
 from strands.models.bedrock import BedrockModel
 from system_prompt import SYSTEM_PROMPT
+from cloudwatch_tools import list_log_groups, search_logs
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -102,6 +103,7 @@ def lambda_handler(event, context):
             model=model,
             system_prompt=SYSTEM_PROMPT,
             messages=messages,
+            tools=[list_log_groups, search_logs],
         )
 
         # エージェントループ実行（ツール追加時は自動でループする）

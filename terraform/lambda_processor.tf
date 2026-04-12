@@ -12,7 +12,7 @@ resource "aws_lambda_function" "processor" {
   source_code_hash = data.archive_file.processor.output_base64sha256
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
-  timeout          = 60
+  timeout          = 120
   memory_size      = 256
   role             = aws_iam_role.processor.arn
 
@@ -66,6 +66,15 @@ resource "aws_iam_role_policy" "processor" {
           "arn:aws:bedrock:*::foundation-model/*",
           "arn:aws:bedrock:*:*:inference-profile/*",
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups",
+          "logs:StartQuery",
+          "logs:GetQueryResults",
+        ]
+        Resource = "*"
       },
       {
         Effect   = "Allow"
