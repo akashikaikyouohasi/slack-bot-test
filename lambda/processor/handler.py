@@ -42,6 +42,15 @@ def lambda_handler(event, context):
 
     logger.info("Processing message: channel=%s, text=%s", channel, user_text)
 
+    slack = get_slack_client()
+
+    # 「思考中...」を先に投稿
+    thinking_msg = slack.chat_postMessage(
+        channel=channel, text="思考中...", thread_ts=thread_ts
+    )
+    thinking_ts = thinking_msg["ts"]
+    logger.info("Thinking message posted: ts=%s", thinking_ts)
+
     try:
         model_id = os.environ.get(
             "BEDROCK_MODEL_ID", "global.anthropic.claude-haiku-4-5-20251001-v1:0"
@@ -66,6 +75,6 @@ def lambda_handler(event, context):
         logger.error("Bedrock invocation failed: %s", e, exc_info=True)
         answer = f"Error: {str(e)}"
 
-    slack = get_slack_client()
-    slack.chat_postMessage(channel=channel, text=answer, thread_ts=thread_ts)
-    logger.info("Response posted to channel=%s, thread_ts=%s", channel, thread_ts)
+    # 「思考中...」を回答で更新
+    slack.chat_update(channel=channel, ts=thinking_ts, text=answer)
+    logger.info("Response updated: channel=%s, ts=%s", channel, thinking_ts)
