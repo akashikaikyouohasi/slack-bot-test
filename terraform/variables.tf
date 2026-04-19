@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "bedrock_model_id" {
   description = "Bedrock model ID"
   type        = string
-  default     = "anthropic.claude-3-haiku-20240307-v1:0"
+  default     = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "project_name" {

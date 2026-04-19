@@ -40,6 +40,11 @@ resource "aws_iam_role" "processor" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "processor_readonly" {
+  role       = aws_iam_role.processor.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
 resource "aws_iam_role_policy" "processor" {
   name = "${var.project_name}-processor-policy"
   role = aws_iam_role.processor.id

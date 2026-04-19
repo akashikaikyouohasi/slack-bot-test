@@ -6,6 +6,7 @@ import boto3
 from slack_sdk import WebClient
 from strands import Agent
 from strands.models.bedrock import BedrockModel
+from strands_tools import use_aws
 from system_prompt import SYSTEM_PROMPT
 from cloudwatch_tools import list_log_groups, search_logs
 from mcp_servers import create_mcp_clients
@@ -108,7 +109,7 @@ def lambda_handler(event, context):
                 model=model,
                 system_prompt=SYSTEM_PROMPT,
                 messages=messages,
-                tools=[list_log_groups, search_logs] + mcp_clients,
+                tools=[list_log_groups, search_logs, use_aws] + mcp_clients,
             )
 
             # エージェントループ実行
