@@ -16,7 +16,7 @@ mkdir -p "$PACKAGE_DIR"
 uv pip install -r "$PROCESSOR_DIR/requirements.txt" --target "$PACKAGE_DIR" --python 3.12 --python-platform x86_64-manylinux2014 --quiet
 
 # Copy source files
-cp "$PROCESSOR_DIR/handler.py" "$PROCESSOR_DIR/system_prompt.py" "$PROCESSOR_DIR/cloudwatch_tools.py" "$PACKAGE_DIR/"
+cp "$PROCESSOR_DIR/handler.py" "$PROCESSOR_DIR/system_prompt.py" "$PROCESSOR_DIR/cloudwatch_tools.py" "$PROCESSOR_DIR/mcp_servers.py" "$PACKAGE_DIR/"
 
 echo "=== Package ready at $PACKAGE_DIR ==="
 echo "Run 'terraform apply' in terraform/ directory next."

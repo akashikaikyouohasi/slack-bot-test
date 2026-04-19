@@ -8,6 +8,7 @@ from strands import Agent
 from strands.models.bedrock import BedrockModel
 from system_prompt import SYSTEM_PROMPT
 from cloudwatch_tools import list_log_groups, search_logs
+from mcp_servers import create_mcp_clients
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
@@ -99,16 +100,26 @@ def lambda_handler(event, context):
         logger.info("Calling Strands Agent with model: %s", model_id)
 
         model = BedrockModel(model_id=model_id)
-        agent = Agent(
-            model=model,
-            system_prompt=SYSTEM_PROMPT,
-            messages=messages,
-            tools=[list_log_groups, search_logs],
-        )
 
-        # エージェントループ実行（ツール追加時は自動でループする）
-        result = agent(user_text)
-        answer = str(result)
+        mcp_clients = create_mcp_clients()
+
+        try:
+            agent = Agent(
+                model=model,
+                system_prompt=SYSTEM_PROMPT,
+                messages=messages,
+                tools=[list_log_groups, search_logs] + mcp_clients,
+            )
+
+            # エージェントループ実行
+            result = agent(user_text)
+            answer = str(result)
+        finally:
+            for mcp in mcp_clients:
+                try:
+                    mcp.stop(None, None, None)
+                except Exception:
+                    pass
         logger.info("Agent response received: %d chars", len(answer))
     except Exception as e:
         logger.error("Agent invocation failed: %s", e, exc_info=True)
