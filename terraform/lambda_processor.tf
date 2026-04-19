@@ -45,6 +45,35 @@ resource "aws_iam_role_policy_attachment" "processor_readonly" {
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
+resource "aws_iam_role_policy" "processor_deny_sensitive" {
+  name = "${var.project_name}-processor-deny-sensitive"
+  role = aws_iam_role.processor.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "DenySensitiveDataAccess"
+        Effect = "Deny"
+        Action = [
+          "s3:GetObject",
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath",
+          "lambda:GetFunction",
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:BatchGetItem",
+          "sqs:ReceiveMessage",
+          "kms:Decrypt",
+        ]
+        Resource = "*"
+      },
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "processor" {
   name = "${var.project_name}-processor-policy"
   role = aws_iam_role.processor.id

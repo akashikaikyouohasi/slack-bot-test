@@ -131,9 +131,10 @@ Processor LambdaのIAMロールには以下の権限が付与される:
 | ポリシー | 用途 |
 |---|---|
 | `ReadOnlyAccess` (AWSマネージド) | `use_aws` ツールによるAWSリソース参照 |
+| Deny (機密データアクセス拒否) | S3オブジェクト取得、SSMパラメータ、DynamoDBレコード等を明示的に拒否 |
 | カスタムポリシー | CloudWatch Logs書き込み、Bedrock呼び出し、Secrets Manager読み取り |
 
-`use_aws` ツールはReadOnlyAccessの範囲内で動作するため、変更操作はIAMレベルで拒否される。
+`use_aws` ツールはReadOnlyAccessの範囲内で動作するため、変更操作はIAMレベルで拒否される。加えて、機密データへのアクセス（S3オブジェクトの中身、DynamoDBのレコード、SSMパラメータ値等）も明示的にDenyしている。
 
 ## Secrets Manager
 
