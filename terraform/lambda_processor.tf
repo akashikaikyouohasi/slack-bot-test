@@ -66,7 +66,6 @@ resource "aws_iam_role_policy" "processor_deny_sensitive" {
           "dynamodb:Scan",
           "dynamodb:BatchGetItem",
           "sqs:ReceiveMessage",
-          "kms:Decrypt",
         ]
         Resource = "*"
       },
