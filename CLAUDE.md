@@ -23,8 +23,15 @@ Strands Agentsを使ったSlack botで、AWSリソースの調査・回答を自
 ## エージェントのツール構成
 
 - `use_aws` (`strands_tools`) — boto3経由で任意のAWS API呼び出し（ReadOnly）
+- `file_read` (`strands_tools`) — Terraformリポジトリのファイル読み取り（`/var/task/terraform_repo/`）
 - `list_log_groups`, `search_logs` (`cloudwatch_tools.py`) — CloudWatch Logs専用ツール
 - AWS Knowledge MCP Server — AWSドキュメント参照
+
+## Terraformリポジトリ同梱
+
+- `scripts/package.sh` 実行時に `TERRAFORM_REPO_URL` 環境変数を設定すると、BitBucketからcloneしてパッケージに含める
+- 例: `TERRAFORM_REPO_URL=git@bitbucket.org:team/infra.git ./scripts/package.sh`
+- Lambda内では `/var/task/terraform_repo/` に配置される
 
 ## セキュリティ上の制約
 
