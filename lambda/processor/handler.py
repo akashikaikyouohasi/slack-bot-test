@@ -126,6 +126,11 @@ def lambda_handler(event, context):
         logger.error("Agent invocation failed: %s", e, exc_info=True)
         answer = f"Error: {str(e)}"
 
+    # Slackのメッセージ上限（約40,000文字）を超える場合は切り詰め
+    SLACK_MAX_LENGTH = 39000
+    if len(answer) > SLACK_MAX_LENGTH:
+        answer = answer[:SLACK_MAX_LENGTH] + "\n\n_（回答が長すぎるため省略されました）_"
+
     # 「思考中...」を回答で更新
     slack.chat_update(channel=channel, ts=thinking_ts, text=answer)
     logger.info("Response updated: channel=%s, ts=%s", channel, thinking_ts)
