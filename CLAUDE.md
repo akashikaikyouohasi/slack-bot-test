@@ -31,7 +31,7 @@ Strands Agentsを使ったSlack botで、AWSリソースの調査・回答を自
 - IAMは `ReadOnlyAccess` + 機密データアクセスのDenyポリシー
 - Denyされている操作: `s3:GetObject`, `ssm:GetParameter*`, `lambda:GetFunction`, `dynamodb:GetItem/Query/Scan/BatchGetItem`, `sqs:ReceiveMessage`
 - `kms:Decrypt` はDenyしてはいけない（Lambda環境変数の復号に必要）
-- `secretsmanager:GetSecretValue` はLambda自身がSlackトークン取得に使うためIAMでDenyできない。システムプロンプトで制限している
+- `secretsmanager:GetSecretValue` はカスタムポリシーでSlack用ARNのみAllowしており、`ReadOnlyAccess` には含まれないため他のシークレットは読めない
 
 ## デプロイ
 
