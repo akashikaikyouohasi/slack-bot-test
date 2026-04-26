@@ -6,6 +6,7 @@ import boto3
 from slack_sdk import WebClient
 from strands import Agent
 from strands.models.bedrock import BedrockModel
+from strands.models.model import CacheConfig
 from strands_tools import use_aws, file_read
 from system_prompt import SYSTEM_PROMPT
 from cloudwatch_tools import list_log_groups, search_logs
@@ -13,6 +14,28 @@ from mcp_servers import create_mcp_clients
 
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
+
+# Bedrock料金テーブル (USD per 1M tokens)
+# https://aws.amazon.com/jp/bedrock/pricing/
+# cache_writeは5分TTLの料金を使用
+MODEL_PRICING = {
+    "claude-opus-4-7": {"input": 5.00, "output": 25.00, "cache_read": 0.50, "cache_write": 6.25},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-sonnet-4-5": {"input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00, "cache_read": 0.10, "cache_write": 1.25},
+}
+
+
+def calculate_cost(model_id, input_tokens, output_tokens, cache_read_tokens=0, cache_write_tokens=0):
+    """モデルIDからトークン料金を計算する (USD)"""
+    for key, pricing in MODEL_PRICING.items():
+        if key in model_id:
+            input_cost = input_tokens * pricing["input"] / 1_000_000
+            output_cost = output_tokens * pricing["output"] / 1_000_000
+            cache_read_cost = cache_read_tokens * pricing["cache_read"] / 1_000_000
+            cache_write_cost = cache_write_tokens * pricing["cache_write"] / 1_000_000
+            return input_cost + output_cost + cache_read_cost + cache_write_cost
+    return None
 
 secrets_client = boto3.client("secretsmanager")
 
@@ -100,7 +123,7 @@ def lambda_handler(event, context):
         )
         logger.info("Calling Strands Agent with model: %s", model_id)
 
-        model = BedrockModel(model_id=model_id)
+        model = BedrockModel(model_id=model_id, cache_config=CacheConfig(strategy="auto"))
 
         mcp_clients = create_mcp_clients()
 
@@ -115,6 +138,16 @@ def lambda_handler(event, context):
             # エージェントループ実行
             result = agent(user_text)
             answer = str(result)
+
+            # 料金を計算
+            usage = agent.event_loop_metrics.accumulated_usage
+            input_tokens = usage.get("inputTokens", 0)
+            output_tokens = usage.get("outputTokens", 0)
+            cache_read_tokens = usage.get("cacheReadInputTokens", 0)
+            cache_write_tokens = usage.get("cacheWriteInputTokens", 0)
+            cost = calculate_cost(model_id, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens)
+            if cost is not None:
+                answer += f"\n\n_:bar_chart: ${cost:.4f}_"
         finally:
             for mcp in mcp_clients:
                 try:
