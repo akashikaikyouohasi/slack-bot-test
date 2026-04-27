@@ -71,7 +71,7 @@ def build_messages_from_thread(slack, channel, thread_ts, thinking_ts, bot_user_
         # メンション部分を除去
         text = re.sub(r"<@[A-Z0-9]+>\s*", "", text).strip()
         # ボットが付与したコスト行を除去
-        text = re.sub(r"\n*_消費コスト: \$[\d.]+_$", "", text).strip()
+        text = re.sub(r"\n*_消費コスト: .+_$", "", text).strip()
         if not text:
             continue
 
@@ -153,7 +153,11 @@ def lambda_handler(event, context):
             cache_write_tokens = usage.get("cacheWriteInputTokens", 0)
             cost = calculate_cost(model_id, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens)
             if cost is not None:
-                answer += f"\n\n_消費コスト: ${cost:.4f}_"
+                answer += (
+                    f"\n\n_消費コスト: ${cost:.4f}"
+                    f" | in: {input_tokens:,} out: {output_tokens:,}"
+                    f" cache r/w: {cache_read_tokens:,}/{cache_write_tokens:,}_"
+                )
         finally:
             for mcp in mcp_clients:
                 try:
