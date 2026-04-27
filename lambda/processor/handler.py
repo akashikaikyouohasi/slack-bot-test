@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+from datetime import datetime, timezone
 import boto3
 from slack_sdk import WebClient
 from strands import Agent
@@ -69,6 +70,8 @@ def build_messages_from_thread(slack, channel, thread_ts, thinking_ts, bot_user_
         text = msg.get("text", "")
         # メンション部分を除去
         text = re.sub(r"<@[A-Z0-9]+>\s*", "", text).strip()
+        # ボットが付与したコスト行を除去
+        text = re.sub(r"\n*_消費コスト: \$[\d.]+_$", "", text).strip()
         if not text:
             continue
 
@@ -128,9 +131,12 @@ def lambda_handler(event, context):
         mcp_clients = create_mcp_clients()
 
         try:
+            today = datetime.now(timezone.utc).strftime("%Y年%m月%d日")
+            system_prompt = f"今日の日付は{today}です。\n\n{SYSTEM_PROMPT}"
+
             agent = Agent(
                 model=model,
-                system_prompt=SYSTEM_PROMPT,
+                system_prompt=system_prompt,
                 messages=messages,
                 tools=[list_log_groups, search_logs, use_aws, file_read] + mcp_clients,
             )
@@ -147,7 +153,7 @@ def lambda_handler(event, context):
             cache_write_tokens = usage.get("cacheWriteInputTokens", 0)
             cost = calculate_cost(model_id, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens)
             if cost is not None:
-                answer += f"\n\n_:bar_chart: ${cost:.4f}_"
+                answer += f"\n\n_消費コスト: ${cost:.4f}_"
         finally:
             for mcp in mcp_clients:
                 try:
