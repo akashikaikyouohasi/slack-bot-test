@@ -16,7 +16,7 @@ mkdir -p "$PACKAGE_DIR"
 uv pip install -r "$PROCESSOR_DIR/requirements.txt" --target "$PACKAGE_DIR" --python 3.12 --python-platform x86_64-manylinux2014 --quiet
 
 # Copy source files
-cp "$PROCESSOR_DIR/handler.py" "$PROCESSOR_DIR/system_prompt.py" "$PROCESSOR_DIR/cloudwatch_tools.py" "$PROCESSOR_DIR/mcp_servers.py" "$PACKAGE_DIR/"
+cp "$PROCESSOR_DIR/handler.py" "$PROCESSOR_DIR/system_prompt.py" "$PROCESSOR_DIR/cloudwatch_tools.py" "$PROCESSOR_DIR/mcp_servers.py" "$PROCESSOR_DIR/billing_mcp_bootstrap.py" "$PACKAGE_DIR/"
 
 # Clone Terraform repository
 TERRAFORM_REPO_URL="${TERRAFORM_REPO_URL:-git@github.com:akashikaikyouohasi/slack-bot-test.git}"  # TODO: 実際のリポジトリURLに変更
