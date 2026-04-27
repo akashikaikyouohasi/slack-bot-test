@@ -25,7 +25,8 @@ Strands Agentsを使ったSlack botで、AWSリソースの調査・回答を自
 - `use_aws` (`strands_tools`) — boto3経由で任意のAWS API呼び出し（ReadOnly）
 - `file_read` (`strands_tools`) — Terraformリポジトリのファイル読み取り（`/var/task/terraform_repo/`）
 - `list_log_groups`, `search_logs` (`cloudwatch_tools.py`) — CloudWatch Logs専用ツール
-- AWS Knowledge MCP Server — AWSドキュメント参照
+- AWS Knowledge MCP Server — AWSドキュメント参照（Streamable HTTP）
+- AWS Billing and Cost Management MCP Server — コスト分析・最適化推奨（stdio）
 
 ## Terraformリポジトリ同梱
 
