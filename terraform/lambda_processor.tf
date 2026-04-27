@@ -6,14 +6,29 @@ data "archive_file" "processor" {
   output_path = "${path.module}/../lambda/processor.zip"
 }
 
+# S3 bucket for Lambda deployment (ZIP > 50MB)
+resource "aws_s3_bucket" "lambda_deploy" {
+  bucket = "${var.project_name}-lambda-deploy-${data.aws_caller_identity.current.account_id}"
+}
+
+resource "aws_s3_object" "processor_zip" {
+  bucket = aws_s3_bucket.lambda_deploy.id
+  key    = "processor.zip"
+  source = data.archive_file.processor.output_path
+  etag   = data.archive_file.processor.output_md5
+}
+
+data "aws_caller_identity" "current" {}
+
 resource "aws_lambda_function" "processor" {
   function_name    = "${var.project_name}-processor"
-  filename         = data.archive_file.processor.output_path
+  s3_bucket        = aws_s3_bucket.lambda_deploy.id
+  s3_key           = aws_s3_object.processor_zip.key
   source_code_hash = data.archive_file.processor.output_base64sha256
   handler          = "handler.lambda_handler"
   runtime          = "python3.12"
   timeout          = 120
-  memory_size      = 256
+  memory_size      = 512
   role             = aws_iam_role.processor.arn
 
   environment {
@@ -106,6 +121,14 @@ resource "aws_iam_role_policy" "processor" {
           "logs:DescribeLogGroups",
           "logs:StartQuery",
           "logs:GetQueryResults",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "bcm-pricing-calculator:Get*",
+          "bcm-pricing-calculator:List*",
         ]
         Resource = "*"
       },
